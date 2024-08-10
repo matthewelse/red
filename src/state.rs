@@ -7,6 +7,8 @@ pub(crate) enum Command {
     Down,
     Left,
     Right,
+    JumpToBottom,
+    InsertCharacter(char),
 }
 
 pub(crate) struct User {
@@ -96,10 +98,28 @@ impl User {
                     .min(self.current_line_length().unwrap_or(0));
                 self.cursor_pos.0 = self.cursor_pos.0.saturating_sub(1)
             }
-
             Command::Right => {
                 self.cursor_pos.0 =
                     (self.cursor_pos.0 + 1).min(self.current_line_length().unwrap_or(0))
+            }
+            Command::JumpToBottom => {
+                // TODO: This isn't really jumping to the bottom of the file.
+                self.cursor_pos.1 = self.screen_size.1 - 1;
+            }
+
+            Command::InsertCharacter(c) => {
+                if let Some(cursor) = self.start_of_current_line() {
+                    let pos = cursor.pos();
+                    let pos = pos
+                        + (self
+                            .cursor_pos
+                            .0
+                            .min(self.current_line_length().unwrap_or(0))
+                            as usize);
+
+                    self.rope.edit(pos..pos, format!("{c}"));
+                    self.cursor_pos.0 += 1;
+                }
             }
         }
     }
