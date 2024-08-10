@@ -1,0 +1,13 @@
+[package]
+name = "red"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+clap = { version = "4.5.14", features = ["derive"] }
+ratatui = "0.28.0"
+termion = "4.0.2"
+tracing = "0.1.40"
+tracing-appender = "0.2.3"
+tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
+xi-rope = "0.3.0"
