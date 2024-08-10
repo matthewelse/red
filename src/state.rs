@@ -1,6 +1,6 @@
-use std::borrow::Cow;
+use std::{borrow::Cow, f64::consts::PI};
 
-use xi_rope::{interval::IntervalBounds, Cursor, Rope, RopeInfo};
+use xi_rope::{interval::IntervalBounds, Cursor, LinesMetric, Rope, RopeInfo};
 
 pub(crate) enum Command {
     Up,
@@ -58,7 +58,7 @@ impl User {
 
         // Move the cursor to the current line
         for _i in 0..self.cursor_pos.1 {
-            let _pos: usize = cursor.next::<xi_rope::LinesMetric>()?;
+            let _pos: usize = cursor.next::<LinesMetric>()?;
         }
 
         Some(cursor)
@@ -68,26 +68,33 @@ impl User {
         let mut cursor = self.start_of_current_line()?;
         let pos = cursor.pos();
 
-        Some(
-            (cursor
-                .next::<xi_rope::LinesMetric>()
-                .unwrap_or(self.rope.len())
-                - pos
-                - 1) as u16,
-        )
+        Some((cursor.next::<LinesMetric>().unwrap_or(self.rope.len()) - pos - 1) as u16)
     }
 
     pub(crate) fn handle_event(&mut self, command: &Command) {
         match command {
             Command::Up => {
                 if let Some(_) = self.start_of_current_line() {
+                    if self.cursor_pos.1 == 0 {
+                        let mut cursor = self.start_of_screen();
+                        if let Some(new_start_pos) = cursor.prev::<LinesMetric>() {
+                            self.byte_offset_to_top_left = new_start_pos;
+                        }
+                    }
                     self.cursor_pos.1 = self.cursor_pos.1.saturating_sub(1);
                 }
             }
             Command::Down => {
                 if let Some(mut cursor) = self.start_of_current_line() {
-                    if let Some(_) = cursor.next::<xi_rope::LinesMetric>() {
-                        self.cursor_pos.1 = (self.cursor_pos.1 + 1).min(self.screen_size.1 - 1);
+                    if let Some(_) = cursor.next::<LinesMetric>() {
+                        if self.cursor_pos.1 == self.screen_size.1 - 1 {
+                            let mut cursor = self.start_of_screen();
+                            if let Some(new_start_pos) = cursor.next::<LinesMetric>() {
+                                self.byte_offset_to_top_left = new_start_pos;
+                            }
+                        } else {
+                            self.cursor_pos.1 = (self.cursor_pos.1 + 1).min(self.screen_size.1 - 1);
+                        }
                     }
                 }
             }
